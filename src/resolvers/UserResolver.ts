@@ -17,6 +17,11 @@ class AuthResponse {
     refreshtoken : string
 }
 
+/**
+ * @class User
+ * 
+ * Resolver for User Entity
+ */
 @Resolver(User)
 export class UserResolver {
 
@@ -25,6 +30,12 @@ export class UserResolver {
         return Blog.find({ where : { postedBy : user }})
     }
 
+    /**
+     * 
+     * @param take 
+     * Limit (paginated) - max number of entities should be taken. Default Value is 10
+     * 
+     */
     @Query(() => [User])
     async getUsers(
         @Arg("take", {
@@ -34,6 +45,15 @@ export class UserResolver {
         return await User.find({ take })
     }
 
+    /**
+     * 
+     * @param userName
+     * @param email
+     * @param password
+     * 
+     * @description Creates a new User
+     * 
+     */
     @Mutation(() => User)
     async createUser(
         @Arg("userName") userName: string,
@@ -51,6 +71,13 @@ export class UserResolver {
         return user;
     }
 
+    /**
+     * 
+     * @param email
+     * @param password
+     * 
+     * @description Function to login Users
+     */
     @Mutation(() => AuthResponse)
     async login(
         @Arg("email") email: string,
