@@ -9,6 +9,7 @@ import { BlogResolver } from "./resolvers/BlogResolver";
 import cors from 'cors'
 import tokenRouter from "./routes/tokenRoute";
 import cookieParser from "cookie-parser";
+import { createServer } from "http";
 
 (async () => {
     const app = express();
@@ -42,11 +43,15 @@ import cookieParser from "cookie-parser";
         context : ({req, res}) => ({ req, res })
     });
 
-    apolloServer.applyMiddleware({app, cors : false });
+    apolloServer.applyMiddleware({ app, cors: false });
+    
+    const httpServer = createServer(app);
+
+    await apolloServer.installSubscriptionHandlers(httpServer);
     
     const PORT = process.env.port || 4000
 
-    app.listen(PORT, () => {
+    httpServer.listen(PORT, () => {
         console.log(`Server Started at port http://localhost:${PORT}`);
     })
 })();

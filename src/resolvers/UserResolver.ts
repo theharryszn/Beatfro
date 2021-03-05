@@ -1,8 +1,8 @@
 import { User } from "../entity/User";
-import { Arg, Ctx, Field, FieldResolver, Int, Mutation, ObjectType, Query, Resolver, Root } from "type-graphql";
+import { Arg, Ctx, Field, FieldResolver, Int, Mutation, ObjectType, PubSub, Query, Resolver, Root, Subscription } from "type-graphql";
 import { Blog } from "../entity/Blog";
 import { compare, hash } from "bcryptjs";
-import { ApolloError } from "apollo-server-express";
+import { ApolloError, PubSubEngine } from "apollo-server-express";
 import { createAccessToken, createRefreshToken, sendRefreshToken } from "../helpers/tokenHelpers";
 import { AuthContext } from "../AuthContext";
 import { getConnection } from "typeorm";
@@ -30,6 +30,17 @@ export class UserResolver {
         return Blog.find({ where : { postedBy : user }})
     }
 
+    @Subscription(() => [User],{
+        topics: ["USERS"]
+    })
+    async subscribeToUsers(
+        @Arg("take", {
+            defaultValue : 10
+        }) take?: number,
+    ) : Promise<Array<User>> {
+        return await User.find({ take })
+    }
+
     /**
      * 
      * @param take 
@@ -40,7 +51,7 @@ export class UserResolver {
     async getUsers(
         @Arg("take", {
             defaultValue : 10
-        }) take? : number
+        }) take?: number,
     ): Promise<Array<User>> {
         return await User.find({ take })
     }
@@ -75,7 +86,8 @@ export class UserResolver {
         @Arg("userName") userName: string,
         @Arg("email") email: string,
         @Arg("password") password: string,
-        @Ctx() { res } : AuthContext
+        @Ctx() { res }: AuthContext,
+        @PubSub() pubSub: PubSubEngine
     ): Promise<AuthResponse>{
         const hashedPassword = await hash(password + userName[0] + email, 12);
 
@@ -85,7 +97,10 @@ export class UserResolver {
 
         await user.save();
 
-        sendRefreshToken(res, createAccessToken(user))
+        sendRefreshToken(res, createAccessToken(user));
+
+        pubSub.publish("USERS", await User.find({}));
+
         return {
             user,
             accesstoken : createRefreshToken(user)
@@ -103,7 +118,8 @@ export class UserResolver {
     async login(
         @Arg("email") email: string,
         @Arg("password") password: string,
-        @Ctx() { res} : AuthContext
+        @Ctx() { res }: AuthContext,
+        @PubSub() pubSub: PubSubEngine
     ): Promise<AuthResponse> {
         const user = await User.findOne({ where: { email } })
         
@@ -119,7 +135,9 @@ export class UserResolver {
             throw new ApolloError("Password is incorrect")
         }
 
-        sendRefreshToken(res, createRefreshToken(user))
+        sendRefreshToken(res, createRefreshToken(user));
+
+        pubSub.publish("USERS", await User.find({}));
         
         return {
             user,
