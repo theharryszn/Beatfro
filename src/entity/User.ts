@@ -1,6 +1,6 @@
 import { IsEmail, IsNotEmpty } from "class-validator";
 import { Field, ObjectType } from "type-graphql";
-import {Entity, ObjectIdColumn, ObjectID, Column, BaseEntity } from "typeorm";
+import {Entity, ObjectIdColumn, ObjectID, Column, BaseEntity, CreateDateColumn } from "typeorm";
 import { Blog } from "./Blog";
 
 
@@ -34,8 +34,12 @@ export class User extends BaseEntity{
     @Column()
     blogs: [Blog]
     
-    @Column("int", { default : 0})
-    tokenVersion : number
+    @Column("int", { default: 0 })
+    tokenVersion: number = 0;
+
+    @Field(() => Date)
+    @CreateDateColumn()
+    dateJoined : Date
     
     constructor(userInput: UserInput) {
         super();

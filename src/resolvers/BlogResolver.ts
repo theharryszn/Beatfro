@@ -1,6 +1,8 @@
 import { Blog } from "../entity/Blog";
-import { Arg, FieldResolver, Mutation, Query, Resolver, Root } from "type-graphql";
+import { Arg, Ctx, FieldResolver, Mutation, Query, Resolver, Root } from "type-graphql";
 import { User } from "../entity/User";
+import { AuthContext } from "src/AuthContext";
+import { ApolloError } from "apollo-server-express";
 
 @Resolver(Blog)
 export class BlogResolver {
@@ -27,9 +29,18 @@ export class BlogResolver {
 
     @Mutation(() => Blog)
     async addBlogPost(
-        @Arg("caption") caption : string
+        @Arg("caption") caption: string,
+        @Ctx() { payload } : AuthContext
     ): Promise<Blog> {
         const blog = new Blog({ caption });
+
+        const user = await User.findOne(payload?.userId);
+
+        if (!user) {
+            throw new ApolloError("You are not a User");
+        }
+
+        blog.postedBy = user;
 
         await blog.save();
 
