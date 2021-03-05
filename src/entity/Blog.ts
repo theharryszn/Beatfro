@@ -18,15 +18,19 @@ export class Blog extends BaseEntity{
     @Column()
     caption: String;
 
+    // update in resolver 
     @Field(() => User)
     @Column(() => User)
     postedBy: User
     
     @Field(() => Date)
     @CreateDateColumn()
-    dateAdded : Date
-    
+    dateAdded: Date;
 
+    //am not sure
+    @ObjectIdColumn()
+    postedById: ObjectID;
+    
     constructor(blogInput : BlogInput) {
         super();
         

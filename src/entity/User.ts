@@ -32,7 +32,10 @@ export class User extends BaseEntity{
 
     @Field(() => [Blog])
     @Column()
-    blogs : [Blog]
+    blogs: [Blog]
+    
+    @Column("int", { default : 0})
+    tokenVersion : number
     
     constructor(userInput: UserInput) {
         super();

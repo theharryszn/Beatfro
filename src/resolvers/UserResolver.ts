@@ -1,8 +1,11 @@
 import { User } from "../entity/User";
-import { Arg, Field, FieldResolver, Mutation, ObjectType, Query, Resolver, Root } from "type-graphql";
+import { Arg, Ctx, Field, FieldResolver, Int, Mutation, ObjectType, Query, Resolver, Root } from "type-graphql";
 import { Blog } from "../entity/Blog";
 import { compare, hash } from "bcryptjs";
 import { ApolloError } from "apollo-server-express";
+import { createAccessToken, createRefreshToken, sendRefreshToken } from "../helpers/tokenHelpers";
+import { AuthContext } from "../AuthContext";
+import { getConnection } from "typeorm";
 
 @ObjectType()
 class AuthResponse {
@@ -12,9 +15,6 @@ class AuthResponse {
 
     @Field()
     accesstoken: string;
-
-    @Field()
-    refreshtoken : string
 }
 
 /**
@@ -45,6 +45,22 @@ export class UserResolver {
         return await User.find({ take })
     }
 
+    @Mutation(() => Boolean)
+    async logout(@Ctx() { res }: AuthContext) {
+        sendRefreshToken(res, "");
+
+        return true;
+    }
+
+    @Mutation(() => Boolean)
+    async revokeRefreshTokensForUser(@Arg("userId", () => Int) userId: number) {
+        await getConnection()
+        .getRepository(User)
+        .increment({ id: userId }, "tokenVersion", 1);
+
+        return true;
+    }
+
     /**
      * 
      * @param userName
@@ -54,21 +70,26 @@ export class UserResolver {
      * @description Creates a new User
      * 
      */
-    @Mutation(() => User)
+    @Mutation(() => AuthResponse)
     async createUser(
         @Arg("userName") userName: string,
         @Arg("email") email: string,
-        @Arg("password") password : string
-    ): Promise<User>{
-        // const hashedPassword = await hash(password + userName[0] + email, 12);
+        @Arg("password") password: string,
+        @Ctx() { res } : AuthContext
+    ): Promise<AuthResponse>{
+        const hashedPassword = await hash(password + userName[0] + email, 12);
 
-        const hashedPassword = await hash(password, 12);
+        // const hashedPassword = await hash(password, 12);
         
         const user = new User({ userName, email, password : hashedPassword });
 
         await user.save();
 
-        return user;
+        sendRefreshToken(res, createAccessToken(user))
+        return {
+            user,
+            accesstoken : createRefreshToken(user)
+        };
     }
 
     /**
@@ -81,7 +102,8 @@ export class UserResolver {
     @Mutation(() => AuthResponse)
     async login(
         @Arg("email") email: string,
-        @Arg("password") password : string
+        @Arg("password") password: string,
+        @Ctx() { res} : AuthContext
     ): Promise<AuthResponse> {
         const user = await User.findOne({ where: { email } })
         
@@ -89,18 +111,19 @@ export class UserResolver {
             throw new ApolloError("Incorrect Email or Password")
         }
 
-        // const passwordIsCorrect = await compare(password + user?.userName[0] + email, user?.password);
+        const passwordIsCorrect = await compare(password + user?.userName[0] + email, user?.password);
 
-        const passwordIsCorrect = await compare(password, user?.password);
+        // const passwordIsCorrect = await compare(password, user?.password);
 
         if (!passwordIsCorrect) {
             throw new ApolloError("Password is incorrect")
         }
+
+        sendRefreshToken(res, createRefreshToken(user))
         
         return {
             user,
-            accesstoken: "",
-            refreshtoken : ""
+            accesstoken: createRefreshToken(user),
         }
     }
 }
