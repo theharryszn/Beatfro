@@ -1,4 +1,4 @@
-# Awesome Project Build with TypeORM
+# Beatfro Server
 
 Steps to run this project:
 
