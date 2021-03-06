@@ -51,6 +51,17 @@ export class UserResolver {
         return Blog.find({ where : { postedById : user.id }})
     }
 
+    // @FieldResolver(() => Boolean)
+    // async isArtiste(@Root() user : User) : Promise<Boolean> {
+    //     const found = await Artiste.findOne({ where: { userId: user.id.toString } })
+        
+    //     if (found) {
+    //         return true
+    //     }
+
+    //     return false
+    // }
+
     @Subscription(() => [User],{
         topics: ["USERS"]
     })

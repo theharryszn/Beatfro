@@ -28,7 +28,11 @@ export class User extends BaseEntity{
     email: string;
 
     @Column()
-    password : string
+    password: string;
+
+    @Field()
+    @Column()
+    isArtiste: boolean = false;
 
     @Field(() => [Blog])
     @Column()

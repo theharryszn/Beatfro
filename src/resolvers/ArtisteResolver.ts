@@ -5,6 +5,7 @@ import { isAuth, isUser } from "../helpers/authHelpers";
 import { AuthContext } from "../AuthContext";
 import { User } from "../entity/User";
 import { ApolloError } from "apollo-server-express";
+import { CheckIfUserIsArtiste } from "../helpers/artisteHelpers";
 
 @Resolver(Artiste)
 export class ArtisteResolver{
@@ -43,10 +44,35 @@ export class ArtisteResolver{
     ): Promise<Artiste> {
         const user = await isUser(payload?.userId);
 
+        const isArtiste = await CheckIfUserIsArtiste(user.id.toString());
+
+        if (isArtiste) {
+            throw new Error("You are already an Artiste");
+        }
+
         const artiste = new Artiste({ stageName, coverPhoto, userId: user.id.toString() });
+
+        user.isArtiste = true;
 
         await artiste.save();
 
+        await user.save();
+
+
         return artiste;
+    }
+
+    @Query(() => Artiste)
+    @UseMiddleware(isAuth)
+    async getMyArtisteProfile(
+        @Ctx() { payload } : AuthContext 
+    ): Promise<Artiste> {
+        const profile = await Artiste.findOne({where :{userId :payload?.userId}});
+
+        if (!profile) {
+            throw new Error("You are not an Artiste");
+        }
+
+        return profile;
     }
 }
