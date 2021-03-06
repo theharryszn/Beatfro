@@ -4,7 +4,8 @@ import { User } from "./User";
 
 
 interface BlogInput {
-    caption: string
+    caption: string,
+    postedById : string
 }
 
 @Entity()
@@ -20,7 +21,6 @@ export class Blog extends BaseEntity{
 
     // update in resolver 
     @Field(() => User)
-    @Column(() => User)
     postedBy: User
     
     @Field(() => Date)
@@ -28,14 +28,15 @@ export class Blog extends BaseEntity{
     dateAdded: Date;
 
     //am not sure
-    @ObjectIdColumn()
-    postedById: ObjectID;
+    @Column()
+    postedById: string;
     
     constructor(blogInput : BlogInput) {
         super();
         
         if (blogInput) {
             this.caption = blogInput.caption;
+            this.postedById = blogInput.postedById
         }
     }
 }

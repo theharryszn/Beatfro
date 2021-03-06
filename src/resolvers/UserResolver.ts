@@ -2,10 +2,12 @@ import { User } from "../entity/User";
 import { Arg, Ctx, Field, FieldResolver, Int, Mutation, ObjectType, PubSub, Query, Resolver, Root, Subscription } from "type-graphql";
 import { Blog } from "../entity/Blog";
 import { compare, hash } from "bcryptjs";
-import { ApolloError, PubSubEngine } from "apollo-server-express";
+import { AuthenticationError, PubSubEngine } from "apollo-server-express";
 import { createAccessToken, createRefreshToken, sendRefreshToken } from "../helpers/tokenHelpers";
 import { AuthContext } from "../AuthContext";
 import { getConnection } from "typeorm";
+import { verify } from "jsonwebtoken";
+import { CheckIfUserAlreadyExist } from "../helpers/authHelpers";
 
 @ObjectType()
 class AuthResponse {
@@ -25,9 +27,28 @@ class AuthResponse {
 @Resolver(User)
 export class UserResolver {
 
+    @Query(() => User, { nullable: true })
+    me(@Ctx() context: AuthContext) {
+      const authorization = context.req.headers["authorization"];
+  
+      if (!authorization) {
+        return null;
+      }
+  
+      try {
+        const token = authorization.split(" ")[1];
+        const payload: any = verify(token, process.env.ACCESS_TOKEN_SECRET!);
+        return User.findOne(payload.userId);
+      } catch (err) {
+        console.log(err);
+        return null;
+      }
+    }
+  
+
     @FieldResolver()
     async blogs(@Root() user: User): Promise<Array<Blog>> {
-        return Blog.find({ where : { postedBy : user }})
+        return Blog.find({ where : { postedById : user.id }})
     }
 
     @Subscription(() => [User],{
@@ -89,6 +110,13 @@ export class UserResolver {
         @Ctx() { res }: AuthContext,
         @PubSub() pubSub: PubSubEngine
     ): Promise<AuthResponse>{
+
+        const found = await CheckIfUserAlreadyExist(email);
+        
+        if (found) {
+            throw new AuthenticationError(`User with email ${email} already exists`);
+        }
+
         const hashedPassword = await hash(password + userName[0] + email, 12);
 
         // const hashedPassword = await hash(password, 12);
@@ -97,13 +125,13 @@ export class UserResolver {
 
         await user.save();
 
-        sendRefreshToken(res, createAccessToken(user));
+        sendRefreshToken(res, createRefreshToken(user));
 
         pubSub.publish("USERS", await User.find({}));
 
         return {
             user,
-            accesstoken : createRefreshToken(user)
+            accesstoken : createAccessToken(user)
         };
     }
 
@@ -124,7 +152,7 @@ export class UserResolver {
         const user = await User.findOne({ where: { email } })
         
         if(!user){
-            throw new ApolloError("Incorrect Email or Password")
+            throw new AuthenticationError("Incorrect Email or Password")
         }
 
         const passwordIsCorrect = await compare(password + user?.userName[0] + email, user?.password);
@@ -132,7 +160,7 @@ export class UserResolver {
         // const passwordIsCorrect = await compare(password, user?.password);
 
         if (!passwordIsCorrect) {
-            throw new ApolloError("Password is incorrect")
+            throw new AuthenticationError("Password is incorrect")
         }
 
         sendRefreshToken(res, createRefreshToken(user));
@@ -141,7 +169,7 @@ export class UserResolver {
         
         return {
             user,
-            accesstoken: createRefreshToken(user),
+            accesstoken: createAccessToken(user),
         }
     }
 }
