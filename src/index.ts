@@ -10,6 +10,8 @@ import cors from 'cors'
 import tokenRouter from "./routes/tokenRoute";
 import cookieParser from "cookie-parser";
 import { createServer } from "http";
+import { ArtisteResolver } from "./resolvers/ArtisteResolver";
+import { TrackResolver } from "./resolvers/TrackResolver";
 
 (async () => {
     const app = express();
@@ -27,7 +29,9 @@ import { createServer } from "http";
 
     const resolvers : readonly[Function, ...Function[]] | [Function, ...Function[]] | readonly[string, ...string[]] | [string, ...string[]] =[
         BlogResolver,
-        UserResolver
+        UserResolver,
+        ArtisteResolver,
+        TrackResolver
     ]
 
     app.get("/", (_, res) => {

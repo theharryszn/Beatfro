@@ -19,8 +19,10 @@ export class Track extends BaseEntity {
     coverPhoto: string;
 
     @Field(() => Artiste)
-    @Column(() => Artiste)
-    artiste : Artiste
+    artiste: Artiste
+    
+    @Column()
+    artisteId : string
 
     // @Field(() => Lyric)
     // @Column(() => Lyric)
