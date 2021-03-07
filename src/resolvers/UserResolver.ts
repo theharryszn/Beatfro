@@ -1,13 +1,14 @@
 import { User } from "../entity/User";
 import { Arg, Ctx, Field, FieldResolver, Int, Mutation, ObjectType, PubSub, Query, Resolver, Root, Subscription } from "type-graphql";
 import { Blog } from "../entity/Blog";
-import { compare, hash } from "bcryptjs";
 import { AuthenticationError, PubSubEngine } from "apollo-server-express";
 import { createAccessToken, createRefreshToken, sendRefreshToken } from "../helpers/tokenHelpers";
 import { AuthContext } from "../AuthContext";
 import { getConnection } from "typeorm";
 import { verify } from "jsonwebtoken";
 import { CheckIfUserAlreadyExist } from "../helpers/authHelpers";
+import { compare, hash } from "bcryptjs";
+// import { comparePassword, hashPassword } from "../helpers/cryptHelper";
 
 @ObjectType()
 class AuthResponse {
@@ -128,9 +129,9 @@ export class UserResolver {
             throw new AuthenticationError(`User with email ${email} already exists`);
         }
 
-        const hashedPassword = await hash(password + userName[0] + email, 12);
+        // const hashedPassword = await hashPassword(password,{ userName, email })
 
-        // const hashedPassword = await hash(password, 12);
+        const hashedPassword = await hash(password, 12);
         
         const user = new User({ userName, email, password : hashedPassword });
 
@@ -166,9 +167,9 @@ export class UserResolver {
             throw new AuthenticationError("Incorrect Email or Password")
         }
 
-        const passwordIsCorrect = await compare(password + user?.userName[0] + email, user?.password);
+        // const passwordIsCorrect = await comparePassword(password, user);
 
-        // const passwordIsCorrect = await compare(password, user?.password);
+        const passwordIsCorrect = await compare(password, user?.password);
 
         if (!passwordIsCorrect) {
             throw new AuthenticationError("Password is incorrect")

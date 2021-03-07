@@ -1,7 +1,12 @@
 import { Field, ObjectType } from "type-graphql";
-import { BaseEntity, Column, Entity, ObjectID, ObjectIdColumn } from "typeorm";
+import { BaseEntity, Column, CreateDateColumn, Entity, ObjectID, ObjectIdColumn, UpdateDateColumn } from "typeorm";
 import { Track } from "./Track";
-// import { User } from "./User";
+import { User } from "./User";
+
+interface LyricInput {
+    body: string,
+    addedBy: string
+}
 
 @Entity()
 @ObjectType()
@@ -10,18 +15,37 @@ export class Lyric extends BaseEntity {
     @ObjectIdColumn()
     id: ObjectID
     
-    @Field(() => Track)
+    @Field(() => Track, { nullable: true })
     @Column(() => Track)
-    song: Track
+    song: Track;
 
-    // @Column(() => ObjectID)
-    // songId: ObjectID
+    @Field()
+    @Column()
+    body : string
+
+    @Column()
+    songId: string
     
-    // @Field(() => User)
-    // @Column(() => User)
-    // addedBy : User
+    @Field(() => User, { nullable: true })
+    addedBy: User
+
+    @Column()
+    addedByUserId : string
     
-    constructor() {
-        super()
+    @Field()
+    @CreateDateColumn()
+    dateAdded: Date;
+
+    @Field()
+    @UpdateDateColumn()
+    dateUpdated: Date;
+    
+    constructor(lyricInput : LyricInput) {
+        super();
+
+        if (lyricInput) {
+            this.body = lyricInput.body;
+            this.addedByUserId = lyricInput.addedBy
+        }
     }
 }

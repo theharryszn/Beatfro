@@ -1,5 +1,6 @@
 import { Field, ObjectType } from "type-graphql";
 import { BaseEntity, Column, CreateDateColumn, Entity, ObjectID, ObjectIdColumn } from "typeorm";
+import { Album } from "./Album";
 import { Track } from "./Track";
 import { User } from "./User";
 
@@ -19,6 +20,10 @@ export class Artiste extends BaseEntity{
     @Field(() => [Track])
     @Column()
     tracks: [Track];
+
+    @Field(() => [Album])
+    @Column()
+    albums: [Album];
 
     @Column()
     userId: string;

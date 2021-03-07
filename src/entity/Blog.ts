@@ -20,7 +20,7 @@ export class Blog extends BaseEntity{
     caption: String;
 
     // update in resolver 
-    @Field(() => User)
+    @Field(() => User, { nullable : true })
     postedBy: User
     
     @Field(() => Date)

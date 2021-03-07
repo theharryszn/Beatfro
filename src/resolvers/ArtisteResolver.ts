@@ -6,6 +6,7 @@ import { AuthContext } from "../AuthContext";
 import { User } from "../entity/User";
 import { ApolloError } from "apollo-server-express";
 import { CheckIfUserIsArtiste } from "../helpers/artisteHelpers";
+import { Album } from "../entity/Album";
 
 @Resolver(Artiste)
 export class ArtisteResolver{
@@ -21,7 +22,12 @@ export class ArtisteResolver{
 
     @FieldResolver(() => [Track])
     async tracks(@Root() artiste: Artiste): Promise<Array<Track>> {
-        return await Track.find({ where : { artisteId : artiste.id }});
+        return await Track.find({ where : { artisteId : artiste.id.toString() }});
+    }
+
+    @FieldResolver(() => [Album])
+    async albums(@Root() artiste : Artiste ) : Promise<Array<Album>> {
+        return await Album.find({ where: { artisteId: artiste.id.toString() } });
     }
 
     @FieldResolver(() => User)

@@ -4,14 +4,11 @@ import express from 'express'
 import { createConnection } from "typeorm";
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
-import { UserResolver } from "./resolvers/UserResolver";
-import { BlogResolver } from "./resolvers/BlogResolver";
 import cors from 'cors'
 import tokenRouter from "./routes/tokenRoute";
 import cookieParser from "cookie-parser";
 import { createServer } from "http";
-import { ArtisteResolver } from "./resolvers/ArtisteResolver";
-import { TrackResolver } from "./resolvers/TrackResolver";
+import RootResolver from "./resolvers/RootResolver";
 
 (async () => {
     const app = express();
@@ -27,12 +24,6 @@ import { TrackResolver } from "./resolvers/TrackResolver";
     
     app.use("/",tokenRouter);
 
-    const resolvers : readonly[Function, ...Function[]] | [Function, ...Function[]] | readonly[string, ...string[]] | [string, ...string[]] =[
-        BlogResolver,
-        UserResolver,
-        ArtisteResolver,
-        TrackResolver
-    ]
 
     app.get("/", (_, res) => {
         res.send("Hello World")
@@ -42,7 +33,7 @@ import { TrackResolver } from "./resolvers/TrackResolver";
 
     const apolloServer = new ApolloServer({
         schema: await buildSchema({
-            resolvers
+            resolvers : RootResolver
         }),
         context : ({req, res}) => ({ req, res })
     });
