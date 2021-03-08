@@ -9,6 +9,7 @@ import tokenRouter from "./routes/tokenRoute";
 import cookieParser from "cookie-parser";
 import { createServer } from "http";
 import RootResolver from "./resolvers/RootResolver";
+import path from 'path'
 
 (async () => {
     const app = express();
@@ -21,6 +22,8 @@ import RootResolver from "./resolvers/RootResolver";
           credentials: true
         })
     );
+
+    app.use(express.static(path.join(__dirname, "../public")))
     
     app.use("/",tokenRouter);
 
