@@ -3,6 +3,7 @@ import { Arg, Ctx, FieldResolver, Mutation, Query, Resolver, Root, UseMiddleware
 import { User } from "../entity/User";
 import { AuthContext } from "../AuthContext";
 import { isAuth, isUser } from "../helpers/authHelpers";
+import { Track } from "../entity/Track";
 
 @Resolver(Blog)
 export class BlogResolver {
@@ -19,6 +20,17 @@ export class BlogResolver {
         return user
     }
 
+    @FieldResolver(() => Track, { nullable: true })
+    async pinnedTrack(@Root() blog: Blog): Promise<Track | null> {
+        const track = await Track.findOne(blog.pinnedTrackId);
+
+        if (!track) {
+            return null
+        }
+
+        return track
+    }
+
     @Query(() => [Blog])
     async getBlogs(
         @Arg("take", {
@@ -30,7 +42,7 @@ export class BlogResolver {
 
     @Mutation(() => Blog)
     @UseMiddleware(isAuth)
-    async addBlogPost(
+    async createBlogPost(
         @Arg("caption") caption: string,
         @Ctx() { payload } : AuthContext
     ): Promise<Blog> {

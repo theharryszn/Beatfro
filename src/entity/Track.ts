@@ -13,6 +13,7 @@ interface TrackInput {
     albumName: string,
     albumId?: string,
     genre?: string,
+    explicit?: boolean,
     positionInAlbum? : number
 }
 
@@ -21,6 +22,7 @@ interface TrackInput {
 @Entity()
 export class Track extends BaseEntity {
 
+    @Field(() => String)
     @ObjectIdColumn()
     id: ObjectID;
 
@@ -41,6 +43,10 @@ export class Track extends BaseEntity {
     @Field()
     @Column()
     song: string;
+
+    @Field()
+    @Column()
+    explicit: boolean = false;
 
     @Field()
     @Column()
@@ -82,6 +88,7 @@ export class Track extends BaseEntity {
             this.albumId = trackInput.albumId || "";
             this.genre = trackInput.genre || "";
             this.positionInAlbum = trackInput.positionInAlbum || null;
+            this.explicit = trackInput.explicit || false
         }
         // Do Something
     }

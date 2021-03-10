@@ -1,14 +1,14 @@
 import { User } from "../entity/User";
-import { Arg, Ctx, Field, FieldResolver, Int, Mutation, ObjectType, PubSub, Query, Resolver, Root, Subscription } from "type-graphql";
+import { Arg, Ctx, Field, FieldResolver, Int, Mutation, ObjectType, PubSub, Query, Resolver, Root, Subscription, UseMiddleware } from "type-graphql";
 import { Blog } from "../entity/Blog";
 import { AuthenticationError, PubSubEngine } from "apollo-server-express";
 import { createAccessToken, createRefreshToken, sendRefreshToken } from "../helpers/tokenHelpers";
 import { AuthContext } from "../AuthContext";
 import { getConnection } from "typeorm";
 import { verify } from "jsonwebtoken";
-import { CheckIfUserAlreadyExist } from "../helpers/authHelpers";
+import { CheckIfUserAlreadyExist, isAuth, isUser } from "../helpers/authHelpers";
 import { compare, hash } from "bcryptjs";
-// import { comparePassword, hashPassword } from "../helpers/cryptHelper";
+import { Artiste } from "../entity/Artiste";
 
 @ObjectType()
 class AuthResponse {
@@ -20,11 +20,7 @@ class AuthResponse {
     accesstoken: string;
 }
 
-/**
- * @class User
- * 
- * Resolver for User Entity
- */
+
 @Resolver(User)
 export class UserResolver {
 
@@ -52,17 +48,6 @@ export class UserResolver {
         return Blog.find({ where : { postedById : user.id }})
     }
 
-    // @FieldResolver(() => Boolean)
-    // async isArtiste(@Root() user : User) : Promise<Boolean> {
-    //     const found = await Artiste.findOne({ where: { userId: user.id.toString } })
-        
-    //     if (found) {
-    //         return true
-    //     }
-
-    //     return false
-    // }
-
     @Subscription(() => [User],{
         topics: ["USERS"]
     })
@@ -74,12 +59,6 @@ export class UserResolver {
         return await User.find({ take })
     }
 
-    /**
-     * 
-     * @param take 
-     * Limit (paginated) - max number of entities should be taken. Default Value is 10
-     * 
-     */
     @Query(() => [User])
     async getUsers(
         @Arg("take", {
@@ -105,15 +84,6 @@ export class UserResolver {
         return true;
     }
 
-    /**
-     * 
-     * @param userName
-     * @param email
-     * @param password
-     * 
-     * @description Creates a new User
-     * 
-     */
     @Mutation(() => AuthResponse)
     async createUser(
         @Arg("userName") userName: string,
@@ -184,4 +154,29 @@ export class UserResolver {
             accesstoken: createAccessToken(user),
         }
     }
+
+    @Mutation(() => User)
+    @UseMiddleware(isAuth)
+    async deleteMyAccount(
+        @Ctx() { payload } : AuthContext
+    ): Promise<User> {
+        
+        const user = await isUser(payload?.userId);
+
+        if (!user) {
+            throw new AuthenticationError("You are not a User yet")
+        }
+        await getConnection()
+            .getRepository(User).delete(user.id)
+        
+        if (user.isArtiste) {
+            await getConnection()
+                .getRepository(Artiste).delete({ userId : user.id.toString() })
+        }
+        
+        return user
+
+    }
+
+    
 }

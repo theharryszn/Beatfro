@@ -12,6 +12,7 @@ interface LyricInput {
 @ObjectType()
 export class Lyric extends BaseEntity {
 
+    @Field(() => String)
     @ObjectIdColumn()
     id: ObjectID
     

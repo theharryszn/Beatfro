@@ -4,8 +4,9 @@ import { Artiste } from "../entity/Artiste";
 import { isAuth, isUser } from "../helpers/authHelpers";
 import { AuthContext } from "../AuthContext";
 import { CheckIfUserIsArtiste } from "../helpers/artisteHelpers";
-import { ApolloError } from "apollo-server-express";
+import { ApolloError, AuthenticationError } from "apollo-server-express";
 import { Lyric } from "../entity/Lyric";
+import { getConnection } from "typeorm";
 
 @Resolver(Track)
 export class TrackResolver {
@@ -69,6 +70,45 @@ export class TrackResolver {
         const track = new Track({ title, coverPhoto, albumName, artisteId: artiste.id.toString(), song , genre});
         
         await track.save()
+
+        return track
+    }
+
+    @Mutation(() => Track)
+    @UseMiddleware(isAuth)
+    async deleteTrack(
+        @Arg("id") id: string,
+        @Ctx() { payload }: AuthContext
+    ): Promise<Track> {
+        const user = await isUser(payload?.userId);
+
+        if (!user) {
+            throw new AuthenticationError("You are not a User")
+        }
+
+        const isArtiste = await CheckIfUserIsArtiste(user.id.toString());
+
+        if (!isArtiste) {
+            throw new ApolloError("You are not allowed to upload tracks, First become an Artiste")
+        }
+
+        const artiste = await Artiste.findOne({ where: { userId: user.id.toString() } });
+
+        if (!artiste) {
+            throw new ApolloError("You are not allowed to upload tracks, First become an Artiste")
+        }
+
+        const track = await Track.findOne(id);
+
+        if (!track) {
+            throw new ReferenceError(`The track with id : ${id} doesn't exist`);
+        }
+
+        if (track.artisteId !== artiste.id.toString()) {
+            throw new AuthenticationError("You don't have the permision to delete this Track")
+        }
+
+        await getConnection().getRepository(Track).delete(track.id)
 
         return track
     }

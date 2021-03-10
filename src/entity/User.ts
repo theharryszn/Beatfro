@@ -14,6 +14,7 @@ interface UserInput {
 @ObjectType()
 export class User extends BaseEntity{
 
+    @Field(() => String)
     @ObjectIdColumn()
     id: ObjectID;
 
@@ -32,7 +33,19 @@ export class User extends BaseEntity{
 
     @Field()
     @Column()
+    profilePhoto: string;
+
+    @Field()
+    @Column()
     isArtiste: boolean = false;
+
+    @Field()
+    @Column()
+    isVerified: boolean = false;
+
+    @Field()
+    @Column()
+    isPremium: boolean = false;
 
     @Field(() => [Blog])
     @Column()

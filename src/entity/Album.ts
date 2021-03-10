@@ -9,12 +9,14 @@ interface AlbumInput {
     coverPhoto: string,
     artisteId: string,
     genre?: string,
+    explicit?: boolean
 }
 
 @Entity()
 @ObjectType()
 export class Album extends BaseEntity{
 
+    @Field(() => String)
     @ObjectIdColumn()
     id: ObjectID;
 
@@ -25,6 +27,10 @@ export class Album extends BaseEntity{
     @Field()
     @Column()
     coverPhoto: string;
+
+    @Field()
+    @Column()
+    explicit: boolean = false;
 
     @Field(() => Artiste, { nullable : true })
     artiste: Artiste;
@@ -54,6 +60,7 @@ export class Album extends BaseEntity{
             this.artisteId = albumInput.artisteId;
             this.coverPhoto = albumInput.coverPhoto;
             this.genre = albumInput.genre || ""
+            this.explicit = albumInput.explicit || false
         }
     }
 }

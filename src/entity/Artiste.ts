@@ -14,6 +14,7 @@ interface ArtistInput {
 @ObjectType()
 export class Artiste extends BaseEntity{
 
+    @Field(() => String)
     @ObjectIdColumn()
     id: ObjectID
 
@@ -32,6 +33,10 @@ export class Artiste extends BaseEntity{
     @Column()
     stageName: string;
 
+    @Field()
+    @Column()
+    isVerified: boolean = false;
+    
     @Field()
     @Column()
     bio: string;
