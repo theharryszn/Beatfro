@@ -1,5 +1,5 @@
 import { Blog } from "../entity/Blog";
-import { Arg, Ctx, FieldResolver, Mutation, Query, Resolver, Root, UseMiddleware } from "type-graphql";
+import { Arg, Ctx, FieldResolver, Mutation, PubSub, PubSubEngine, Query, Resolver, Root, Subscription, UseMiddleware } from "type-graphql";
 import { User } from "../entity/User";
 import { AuthContext } from "../AuthContext";
 import { isAuth, isUser } from "../helpers/authHelpers";
@@ -24,6 +24,8 @@ export class BlogResolver {
     async pinnedTrack(@Root() blog: Blog): Promise<Track | null> {
         const track = await Track.findOne(blog.pinnedTrackId);
 
+        console.log("mumu",blog.pinnedTrackId)
+
         if (!track) {
             return null
         }
@@ -37,14 +39,26 @@ export class BlogResolver {
             defaultValue : 10
         }) take : number
     ): Promise<Array<Blog>> {
-        return await Blog.find({ take });
+        return await Blog.find({ take, order : { dateAdded : "ASC"} });
+    }
+
+    @Subscription(() => [Blog], {
+        topics : ["BLOGS"]
+    })
+    async subscribeToBlogs(
+        @Arg("take", {
+            defaultValue : 10
+        }) take : number
+    ): Promise<Array<Blog>> {
+        return await Blog.find({ take, order : { id : "ASC" } });
     }
 
     @Mutation(() => Blog)
     @UseMiddleware(isAuth)
     async createBlogPost(
         @Arg("caption") caption: string,
-        @Ctx() { payload } : AuthContext
+        @Ctx() { payload }: AuthContext,
+        @PubSub() pubSub: PubSubEngine
     ): Promise<Blog> {
         
         const user = await isUser(payload?.userId);
@@ -52,6 +66,8 @@ export class BlogResolver {
         const blog = new Blog({ caption, postedById : user.id.toString() });
 
         await blog.save();
+
+        pubSub.publish("BLOGS", await Blog.find({}));
 
         return blog;
     }

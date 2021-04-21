@@ -9,24 +9,24 @@ import { CheckIfUserIsArtiste } from "../helpers/artisteHelpers";
 import { Album } from "../entity/Album";
 
 @Resolver(Artiste)
-export class ArtisteResolver{
+export class ArtisteResolver {
 
     @Query(() => [Artiste])
     async getArtistes(
         @Arg("take", {
-            defaultValue : 10
-        }) take : number
+            defaultValue: 10
+        }) take: number
     ): Promise<Array<Artiste>> {
         return await Artiste.find({ take });
     }
 
     @FieldResolver(() => [Track])
     async tracks(@Root() artiste: Artiste): Promise<Array<Track>> {
-        return await Track.find({ where : { artisteId : artiste.id.toString() }});
+        return await Track.find({ where: { artisteId: artiste.id.toString() } });
     }
 
     @FieldResolver(() => [Album])
-    async albums(@Root() artiste : Artiste ) : Promise<Array<Album>> {
+    async albums(@Root() artiste: Artiste): Promise<Array<Album>> {
         return await Album.find({ where: { artisteId: artiste.id.toString() } });
     }
 
@@ -46,7 +46,7 @@ export class ArtisteResolver{
     async becomeAnArtiste(
         @Arg("stageName") stageName: string,
         @Arg("coverPhoto") coverPhoto: string,
-        @Ctx() { payload } : AuthContext
+        @Ctx() { payload }: AuthContext
     ): Promise<Artiste> {
         const user = await isUser(payload?.userId);
 
@@ -71,14 +71,27 @@ export class ArtisteResolver{
     @Query(() => Artiste)
     @UseMiddleware(isAuth)
     async getMyArtisteProfile(
-        @Ctx() { payload } : AuthContext 
+        @Ctx() { payload }: AuthContext
     ): Promise<Artiste> {
-        const profile = await Artiste.findOne({where :{userId :payload?.userId}});
+        const profile = await Artiste.findOne({ where: { userId: payload?.userId } });
 
         if (!profile) {
             throw new Error("You are not an Artiste");
         }
 
         return profile;
+    }
+
+    @Query(() => Artiste, { nullable : true })
+    async getArtiste(
+        @Arg("id") id: string
+    ): Promise<Artiste | null> {
+        const artiste = await Artiste.findOne(id);
+
+        if (!artiste) {
+            return null
+        }
+
+        return artiste;
     }
 }

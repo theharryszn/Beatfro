@@ -17,9 +17,23 @@ export class TrackResolver {
             defaultValue : 10
         }) take : number
     ): Promise<Array<Track>> {
+        // console.log(await Track.find({ take }))
         return await Track.find({ take });
     }
 
+    @Query(() => Track, { nullable : true})
+    async getTrack(
+        @Arg("id") id : string
+    ): Promise < Track  | null> {
+        const track = await Track.findOne(id);
+
+        if (!track) {
+            return null
+        }
+
+        return track;
+    }
+    
     @FieldResolver(() => Artiste, { nullable : true })
     async artiste(@Root() track : Track): Promise<Artiste | null> {
         const artiste = await Artiste.findOne(track.artisteId);

@@ -67,6 +67,7 @@ export class User extends BaseEntity{
             this.userName = userName;
             this.email = email;
             this.password = password;
+            this.profilePhoto = ""
         }
     }
 
